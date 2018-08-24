@@ -1,9 +1,19 @@
 <!doctype html>
 <html amp lang="ja">
   <head>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-73406198-2"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-73406198-2');
+      </script>
       <meta charset="utf-8">
-      <title>Hello, Embree</title>
+      <title>Embree Renderer入門｜使い方を最小のソースコードで理解する</title>
       <link rel="canonical" href="http://embree.yaikeda.com/index.html">
+      <meta name="robots" content="noindex, follow">
       <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">  
       <script type="application/ld+json">
         {
@@ -23,8 +33,29 @@
       body{
         background-color: #eee;
       }
+      footer {
+        background-color: #0071C5; /*メニュー背景色*/
+        color: white;
+        padding-top: 2px;
+        padding-bottom: 2px;
+      }
+      footer a{
+        text-decoration: none;
+        color: #fff; /*アイコン（フォント）色*/
+      }
       div.main_area{
 
+      }
+      div.main_area a{
+        text-decoration: none;
+        color: #0071C5;
+      }
+      div.main_area h2 a{
+        text-decoration: none;
+        color: white;
+      }
+      h2 {
+        background-color:  #0071C5;
       }
       #ham-menu {
           background-color: #0071C5; /*メニュー背景色*/
@@ -89,19 +120,92 @@
     <header>
       <div id="ham-menu">
         <ul>
-          <li><a href="intro.html">TOP</a></li>
-          <li><a href="#">COMPANY</a></li>
-          <li><a href="#">WORKS</a></li>
-          <li><a href="#">ORDER</a></li>
-          <li><a href="#">FAQ</a></li>
+          <li><a href="#about">このページについて</a></li>
+          <li><a href="#renderer">レンダラとは？</a></li>
+          <li><a href="#embree">Embreeとは？</a></li>
+          <li><a href="#preparation">１．必要な準備</a></li>
+          <li><a href="#first_check">２．動作確認</a></li>
+          <li><a href="#initialization">３．初期設定</a></li>
+          <li><a href="#object">４．物体の定義</a></li>
+          <li><a href="#camera_pos">５．自分の位置の設定</a></li>
+          <li><a href="#ray_dir">６．視線方向の設定</a></li>
+          <li><a href="#rendering">７．レンダリング</a></li>
+          <li><a href="#future">最後に</a></li>
         </ul>
       </div>
       <div id="menu-background"></div>
     </header>
     <main>
       <div class="main_area">
-        <h1>Embreeeeeeeeeeeeeeeeeeeee</h1>
+        <h1>ようこそ，Embreeレンダラの世界へ！</h1>
+        <h2><a name="about">このページについて</a></h2>
+        こんにちは，CGが好きでちょこちょこプログラムとか書いている　あけぐれ　です！<br>
+        <br>
+        このページは，<br>
+        「Embreeレンダラを自分のアプリに組み込みたいっ！」<br>
+        という初心者向けのページになります．（そんなコアな初心者がいるのかはわかりませんが）具体的には，Embree APIを使用するための，最小コードを提供することを目指します．<br>
+        <br>
+        とりあえずソースコードをよこせ！( ﾟДﾟ)という方は，<a href="https://github.com/akegure/UseEmbree" target="_blank">github</a>のページに上げてますので，ご覧ください．
+        <h2> <a name="renderer">レンダラとは？</a></h2>
+        レンダラとは，Render（描画する）+ er（役割をもつもの）です．<br>
+        ひとつのCGを作るためには，オブジェクトの用意，光の設定，カメラの設定，環境の設定など，
+        色々と必要な要素があります．<br>
+        レンダラの役割は，これらの情報を受け取って，最終的な「仮想空間の写真」を出力することです．<br>
+        <br>
+        基本的には，出力したい画像の1ピクセルごとに光線（ray）を発射して，それが当たった場所の情報を取得します．<br>
+        これだけです．<br>
+        <br>
+        これだけなんですが，この部分がCGのコア中のコアの技術であり，仮想空間を実体化するのに不可欠な技術なので，現在に至るまで研究が続けられています．<br>
+        なぜそんなに研究が必要なのか？を語りだすと長いので，ここでは抜粋します．本当に面白いですよ？
+        <h2> <a name="embree">Embreeとは？</a></h2>
+        Embreeはレンダラの一つです．Intel社が開発したもので，オープンソースで完全に内部を見ることができ，<br>
+        かつ最新のIntel CPUを使えば超高速で計算ができるため，レンダラの構造を知るには適しています．<br>
+        <br>
+        ただし，そのチュートリアルは初心者にとって非常に複雑で，プログラムがどこからどこに繋がっているのかが直感的にわかりづらいと感じています．<br>
+        おまけに，データ管理のために多数の自作プログラムを使っていて，ソースコード全てをコピーしなければまともに動かない状態でした．<br>
+        <br>
+        もちろん，プロの方々ならそれでも良いのかもしれませんが，<br>
+        僕のような初心者はこの時点で「こんなんどうやって組み込むんだよ・・・」状態になっていたので，最小プログラムの必要性を感じました．
+        <h2><a name="preparation">１．必要な準備</a></h2>
+        <h3>Embreeのインストール</h3>
+        <h3>OpenCVのインストール</h3>
+        ※なぜOpenCVを使うのかは，「画像表示方法の検討」を読んでください．<br>
+        <h3>Visual Studioの設定</h3>
+        <h3>画像表示方法の検討</h3>
+        レンダラ関係のプログラムを作成する場合に一番面倒なのは，個人的にはここだと思ってます．<br>
+        画像出力はレンダラのメイン機能ではないくせに，無いと結果が確認できない．<br>
+        この部分が，どうしてもプログラムの可読性を悪くしていると考えています．<br>
+        <br>
+        ただ，以下のリストの様に画像の表示・出力方法はいくつかあるのですが，軽量で手軽なものというのが中々ありません．
+        <ur>
+          <li>libjpeg</li>
+          <li>FreeGLUT</li>
+          <li>GLFW</li>
+          <li>OpenCV</li>
+          <li>各種フレームワーク</li>
+        </ur>
+        レンダラ系でよく見るのは，FreeGLUTでウインドウを表示するプログラムです．<br>
+        しかし，ここではOpenCVを使いたいと思います．理由としては，<br>
+        「二行で画像表示ができる」という点につきます．<br>
+        <br>
+        僕はこのプログラムにおいて，できる限りレンダラ本来の役割のみをソースコードに書きたいと思っています．<br>
+        この目的に対して，ライブラリの初期化処理などのプログラムは初心者にとってノイズであり，<br>
+        書けば書くほど本来説明したい部分がわかりづらくなると考えています．<br>
+        <br>
+        OpenCVは画像処理用の非常に有名なライブラリで，色々な処理ができる代わりにそのライブラリのサイズは巨大です．<br>
+        ただ，その点に目をつぶれば，非常に低コストで「動かす」ことができます．
+        <h2><a name="first_check">２．動作確認</a></h2>
+        <h2><a name="initialization">３．初期設定</a></h2>
+        <h2><a name="object">４．物体の定義</a></h2>
+        <h2><a name="camera_pos">５．自分の位置の設定</a></h2>
+        <h2><a name="ray_dir">６．視線方向の設定</a></h2>
+        <h2><a name="rendering">７．レンダリング</a></h2>
+        とうとうここまで来ました．
+        <h2><a name="future">最後に</a></h2>
       </div>
     </main>
+    <footer>
+      Twitter: <a href="https://twitter.com/akegure" target="_blank">@akegure</a>
+    </footer>
   </body>
 </html>
